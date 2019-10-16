@@ -3,8 +3,8 @@ import pickle
 import asyncio
 import aiohttp
 
-from parser_lib import (parse_item, normalize, save_csv, write_file, error_log, filter_urls,
-                        flat_url_list)
+from parser_lib import parse_item, normalize, save_csv, write_file, error_log, filter_urls
+from all_categories import get_all_items_urls
 
 CSV_FILE_NAME = 'data/items.csv'
 result = list()
@@ -96,5 +96,5 @@ def parse_until_complete(urls):
 
 
 if __name__ == '__main__':
-    _urls = flat_url_list('/home/che/opt/apps/parser/parsed_categories')
+    _urls = get_all_items_urls()
     parse_until_complete(_urls)
