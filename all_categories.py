@@ -35,12 +35,15 @@ def get_all_items_urls():
         if urls:
             return urls
 
+    if not os.path.exists('data'):
+        os.mkdir('data')
+
     urls = get_all_menu_links(HOST)
     for url in urls:
         print(url)
         chunks.append(all_subcategory_items(url))
 
-    # Write
+    # Write items urls to file
     urls = tuple(chain(*chunks))
     print(f'total urls: {len(urls)}')
     urls = set(urls)

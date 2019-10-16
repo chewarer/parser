@@ -50,7 +50,11 @@ def all_subcategory_items(url):
     fname = urlparse(url).path
     fname = fname[1:] if fname.startswith('/') else fname
     fname = fname.replace('/', '---')
-    fname = 'data/parsed_categories/' + fname
+
+    path = 'data/parsed_categories/'
+    if not os.path.exists(path):
+        os.mkdir(path)
+    fname = path + fname
     write_file(fname, items_urls)
 
     return items_urls
