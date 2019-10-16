@@ -3,6 +3,8 @@ import requests
 import json
 import shutil
 import csv
+import ast
+from itertools import chain
 from tempfile import NamedTemporaryFile
 from requests import ReadTimeout
 from urllib.parse import urlparse, urlunparse
@@ -10,6 +12,7 @@ from urllib.error import HTTPError
 
 from user_agent import generate_user_agent
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 
 from config import SCHEME, HOSTNAME
 from repeater import repeater
@@ -32,6 +35,8 @@ def all_subcategory_items(url):
             or html.select('.catalog-item_offer a.catalog-item_titlelink')
     )
     pager = html.select('.pagination a.page span')
+
+    # maybe needed parse here
 
     if pager:
         for page in range(int(pager[0].text), int(pager[-1].text) + 1):
@@ -122,6 +127,8 @@ def parse_item(url, html=None) -> dict:
         breadcrumb = html.select('ul.breadcrumb li a')[1:]
         item['breadcrumb'] = '|'.join((u.text for u in breadcrumb))
 
+    item['breadcrumb_urls'] = ','.join([u.attrs.get('href') for u in breadcrumb_bottom])
+
     prodict_param = html.select('.product_brand_info .product-param')
     tech_params = html.select('.tech_params .tech_params_line')
 
@@ -130,6 +137,9 @@ def parse_item(url, html=None) -> dict:
         (p.select_one('.product-param__desc').text or '').strip()
         for p in prodict_param
     })
+
+    tech_params_html = html.select_one('.tech_outer .tech_params')
+    item['tech_params_html'] = delete_class_attr(tech_params_html, 'class')
 
     item['tech_params'] = json.dumps({
         (p.select_one('.tech_params_name').text or '').replace(':', ''):
@@ -166,6 +176,15 @@ def save_csv(items, file_name, update=True):
                 writer.writerow(row)
 
 
+def read_csv(filename) -> tuple:
+    """Read csv as dict"""
+    with open(filename, 'r') as f:
+        reader = csv.DictReader(f)
+        data = tuple(row for row in reader)
+
+    return data
+
+
 def flat_url_list(dirname):
     """Make flat unique url list"""
     urls = set()
@@ -187,3 +206,41 @@ def filter_urls(urls, csv_path):
         csv_urls = set(i.get('url_orig') for i in c)
 
     return urls - csv_urls
+
+
+def delete_class_attr(html: Tag, attr_name):
+    """Delete attribute from html"""
+    if html.__class__.__name__ == 'Tag':
+        html.attrs.pop(attr_name, None)
+        if html.__len__():
+            for child in html:
+                delete_class_attr(child, attr_name)
+
+    return html
+
+
+def map_params() -> dict:
+    """
+        Create map for categories key parameters.
+        Like:
+            map = {
+                'url': {
+                    'category name': ['feature 1', 'feature 2']
+                }
+            }
+    """
+    categories_list = read_csv('data/categories.csv')
+
+    return {
+        row.get('url'): {row.get('title'): ast.literal_eval(row.get('params'))}
+        for row in categories_list
+    }
+
+
+def flat_params() -> tuple:
+    """Get flat list of categories key parameters"""
+    categories_list = read_csv('data/categories.csv')
+
+    return tuple(set(chain(*(
+        tuple(ast.literal_eval(row.get('params'))) for row in categories_list
+    ))))
