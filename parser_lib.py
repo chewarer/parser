@@ -104,9 +104,17 @@ def read_html(html):
 
 def write_file(filename, rows, mode='a'):
     """Save data to file"""
+    dirname, fname = os.path.split(filename)
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+
     with open(filename, mode) as f:
-        for row in rows:
-            f.write(f'{row}\n')
+        if mode.lower() == 'wb':
+            f.write(rows)
+
+        else:
+            for row in rows:
+                f.write(f'{row}\n')
 
 
 def error_log(mes, error_file='errors.txt'):
