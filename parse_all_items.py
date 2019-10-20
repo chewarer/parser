@@ -13,7 +13,7 @@ error_on_urls = set()
 completed_urls = set()
 
 
-async def get_data_from(url):
+async def get_response(url):
     """Async request"""
     async with aiohttp.ClientSession() as session:
         async with session.get(normalize(url)) as resp:
@@ -24,14 +24,24 @@ async def get_data_from(url):
                 error_log(url, 'data/error_item.log')
                 return
             data = await resp.read()
-            if not data:
-                return
 
+            return data
+
+
+async def get_data_from(url):
+    data = await get_response(url)
     try:
         if data:
-            html = parse_item(url, data)
-            result.append(html)
+            parsed_data = parse_item(url, data)
+            result.append(parsed_data)
             completed_urls.add(url)
+
+            # Get image
+            img_url = parsed_data.get('img_url')[1:]
+            img = await get_response(img_url)
+            if img:
+                write_file(img_url, data, mode='wb')
+
     except Exception as e:
         print(f'Except on parse data: {e}. URL: {url}')
         traceback.print_tb(e.__traceback__)
