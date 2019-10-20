@@ -1,14 +1,13 @@
 import os
 from itertools import chain
 
-from parser_lib import normalize, get_url_data, read_html, write_file, all_subcategory_items, HOST
-
 
 def get_all_menu_links(url: str) -> set:
     """
         Get all urls from catalog menu
         (Categories/subcategories urls)
     """
+    from parser_lib import get_url_data, normalize, read_html, write_file
     html = get_url_data(url)
     html = read_html(html)
     page_items = html.select('#nav-catalog a')
@@ -26,6 +25,7 @@ def get_all_items_urls() -> set:
         Write result to files by subcategories
         and return flat list of urls
     """
+    from parser_lib import write_file, all_subcategory_items, HOST
     chunks = list()
     all_items_file = 'data/all_item_urls_flat.txt'
 

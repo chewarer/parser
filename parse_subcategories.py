@@ -2,12 +2,12 @@
     Parse subcategory pages.
     Get title, url, breadcrumbs, filtered parameters.
 """
-from parser_lib import get_url_data, read_html, save_csv, delete_attr, HOST
+# from parser_lib import HOST
 from all_categories import get_all_menu_links
 
 
-def parse_html(url: str) -> dict:
-    html = read_html(get_url_data(url))
+def parse_html(html, url: str) -> dict:
+    from parser_lib import delete_attr
     if not html:
         return {}
 
@@ -32,10 +32,13 @@ def parse_html(url: str) -> dict:
 
 
 def collect_data(urls):
+    from parser_lib import get_url_data, read_html, save_csv
+
     items = list()
 
     for url in urls:
-        row = parse_html(url)
+        html = read_html(get_url_data(url))
+        row = parse_html(html, url)
         if row:
             items.append(row)
 
@@ -45,5 +48,10 @@ def collect_data(urls):
 
 
 if __name__ == '__main__':
+    """
+        Deprecated. 
+        This task running in the 'all_subcategory_items()'
+    """
+    from parser_lib import HOST
     _urls = get_all_menu_links(HOST)
     collect_data(_urls)

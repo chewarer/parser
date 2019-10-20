@@ -18,6 +18,7 @@ from bs4.element import Tag
 
 from config import SCHEME, HOSTNAME
 from repeater import repeater
+from parse_subcategories import parse_html
 
 HOST = urlunparse((SCHEME, HOSTNAME, '', '', '', ''))
 HEADERS = {'User-Agent': generate_user_agent(device_type="desktop", os=('mac', 'linux'))}
@@ -31,6 +32,12 @@ def all_subcategory_items(url):
     if not html:
         return
     html = read_html(html)
+
+    # Parse subcategory pages.
+    # Get title, url, breadcrumbs, filtered parameters.
+    row = parse_html(html, url)
+    if row:
+        save_csv([row], 'data/categories.csv', update=True)
 
     page_items = (
             html.select('.catalog-item .catalog-item_title a')
