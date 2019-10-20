@@ -2,6 +2,7 @@ from time import time
 import pickle
 import asyncio
 import aiohttp
+import traceback
 
 from parser_lib import parse_item, normalize, save_csv, write_file, error_log, filter_urls
 from all_categories import get_all_items_urls
@@ -33,6 +34,7 @@ async def get_data_from(url):
             completed_urls.add(url)
     except Exception as e:
         print(f'Except on parse data: {e}. URL: {url}')
+        traceback.print_tb(e.__traceback__)
         return
 
 

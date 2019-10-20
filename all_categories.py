@@ -20,7 +20,7 @@ def get_all_menu_links(url: str) -> set:
     return urls
 
 
-def get_all_items_urls():
+def get_all_items_urls() -> set:
     """
         Get full url list for each item on site.
         Write result to files by subcategories

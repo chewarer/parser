@@ -1,4 +1,4 @@
-from parser_lib import get_url_data, read_html, save_csv, delete_class_attr, HOST
+from parser_lib import get_url_data, read_html, save_csv, delete_attr, HOST
 from all_categories import get_all_menu_links
 
 
@@ -18,7 +18,7 @@ def parse_html(url: str) -> dict:
     breadcrumb = html.select_one('ul.breadcrumb')
 
     for attr in ['class', 'itemtype', 'itemscope', 'itemprop', 'title', 'content']:
-        breadcrumb = delete_class_attr(breadcrumb, attr)
+        breadcrumb = delete_attr(breadcrumb, attr)
 
     item['breadcrumb'] = breadcrumb
     item['url'] = url

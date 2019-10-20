@@ -1,4 +1,6 @@
 import os
+from copy import copy
+
 import requests
 import json
 import shutil
@@ -139,7 +141,7 @@ def parse_item(url, html=None) -> dict:
     })
 
     tech_params_html = html.select_one('.tech_outer .tech_params')
-    item['tech_params_html'] = delete_class_attr(tech_params_html, 'class')
+    item['tech_params_html'] = str(delete_attr(copy(tech_params_html), 'class')).replace('\n', '')
 
     item['tech_params'] = json.dumps({
         (p.select_one('.tech_params_name').text or '').replace(':', ''):
@@ -208,13 +210,13 @@ def filter_urls(urls, csv_path):
     return urls - csv_urls
 
 
-def delete_class_attr(html: Tag, attr_name):
+def delete_attr(html: Tag, attr_name):
     """Delete attribute from html"""
     if html.__class__.__name__ == 'Tag':
         html.attrs.pop(attr_name, None)
         if html.__len__():
             for child in html:
-                delete_class_attr(child, attr_name)
+                delete_attr(child, attr_name)
 
     return html
 
@@ -241,6 +243,9 @@ def flat_params() -> tuple:
     """Get flat list of categories key parameters"""
     categories_list = read_csv('data/categories.csv')
 
-    return tuple(set(chain(*(
+    params = set(chain(*(
         tuple(ast.literal_eval(row.get('params'))) for row in categories_list
-    ))))
+    )))
+    params.discard('Цена')
+
+    return tuple(params)
