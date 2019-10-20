@@ -1,5 +1,5 @@
+import sys
 from time import time
-import pickle
 import asyncio
 import aiohttp
 import traceback
@@ -60,7 +60,7 @@ def run_iter(urls):
         loop.close()
 
 
-def parse_until_complete(urls):
+def parse_until_complete(urls, chunksize):
     """
         Parse urls.
         Repeat until some urls are parsed.
@@ -68,7 +68,8 @@ def parse_until_complete(urls):
     start = time()
     global error_on_urls
     attempts = 10
-    urls = filter_urls(set(urls), CSV_FILE_NAME)
+    urls = list(filter_urls(set(urls), CSV_FILE_NAME))
+    print(f'Read urls from file: {CSV_FILE_NAME}')
     print(f'URLs for parsing: {len(urls)}')
 
     # Repeat if some urls has not be parsed
@@ -76,27 +77,26 @@ def parse_until_complete(urls):
         if i > 0:
             urls = list(error_on_urls)
             error_on_urls = set()  # reset set
-        run_iter(urls)
+        run_iter(urls[:chunksize])
 
         if not error_on_urls:
             break
 
     # Save parsed data
     try:
-        with open(f'{CSV_FILE_NAME}_raw.pkl', 'wb') as f:
-            f.write(pickle.dumps(result))
-        save_csv(result, CSV_FILE_NAME)
+        save_csv(result, CSV_FILE_NAME, update=True)
     except Exception as e:
         print(e)
     finally:
         if error_on_urls:
             write_file('data/error_on_urls.txt', error_on_urls, mode='w')
 
-    print(f'Total time: {time() - start}')
+    print(f'\nTotal time: {time() - start}')
     print(f'Success completed: {len(result)} urls')
     print(f'Errors: {error_on_urls.__len__()}')
 
 
 if __name__ == '__main__':
+    chunk_size = int(sys.argv[1]) if len(sys.argv) > 1 else 10000
     _urls = get_all_items_urls()
-    parse_until_complete(_urls)
+    parse_until_complete(_urls, chunk_size)

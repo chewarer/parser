@@ -72,6 +72,11 @@ def normalize(url):
     return urlunparse((SCHEME, HOSTNAME, url.path, url.params, url.query, url.fragment))
 
 
+def denormalize(url):
+    url = urlparse(url)
+    return urlunparse(('', '', url.path, url.params, url.query, url.fragment))
+
+
 @repeater()
 def get_url_data(url, params=None):
     """Download page from url"""
@@ -109,7 +114,8 @@ def parse_item(url, html=None) -> dict:
 
     item = dict()
     item['header'] = (html.select_one('.container h1').text or '').strip().replace('\n', '')
-    item['img_url'] = (html.select_one('.product_img_link').attrs.get('href') or '').strip()
+    img_url = (html.select_one('.product_img_link').attrs.get('href') or '').strip()
+    item['img_url'] = denormalize(normalize(img_url))
 
     autotext = (html.select_one('div.autotext').text or '').strip().replace('\n', '')
     item['autotext'] = f'<p>{autotext}</p>' if autotext else None
@@ -131,15 +137,25 @@ def parse_item(url, html=None) -> dict:
 
     item['breadcrumb_urls'] = ','.join([u.attrs.get('href') for u in breadcrumb_bottom])
 
-    prodict_param = html.select('.product_brand_info .product-param')
-    tech_params = html.select('.tech_params .tech_params_line')
+    price = html.select_one('.catalog-item-price .pi_value span')
+    item['price'] = (price.text if price else '').strip().replace(' ', '')
 
+    pack_price = html.select_one('.catalog-item-priceup .pi_value span')
+    item['pack_price'] = (pack_price.text if pack_price else '').strip().replace(' ', '')
+
+    prodict_param_html = html.select_one('.product_brand_info')
+    for attr in ('class', 'itemprop', 'itemscope', 'itemtype'):
+        prodict_param_html = delete_attr(copy(prodict_param_html), attr)
+    item['prodict_param_html'] = str(prodict_param_html).replace('\n', '')
+
+    prodict_param = html.select('.product_brand_info .product-param')
     item['prodict_param'] = json.dumps({
         (p.select_one('.product-param__name').text or '').replace(':', ''):
         (p.select_one('.product-param__desc').text or '').strip()
         for p in prodict_param
     })
 
+    tech_params = html.select('.tech_params .tech_params_line')
     tech_params_html = html.select_one('.tech_outer .tech_params')
     item['tech_params_html'] = str(delete_attr(copy(tech_params_html), 'class')).replace('\n', '')
 
@@ -239,7 +255,7 @@ def map_params() -> dict:
     }
 
 
-def flat_params() -> tuple:
+def flat_params() -> set:
     """Get flat list of categories key parameters"""
     categories_list = read_csv('data/categories.csv')
 
@@ -248,4 +264,15 @@ def flat_params() -> tuple:
     )))
     params.discard('Цена')
 
-    return tuple(params)
+    return params
+
+
+def flat_prod_params() -> set:
+    """
+        Get flat list of product params i.e. (brand, artikul, category).
+    """
+    items = (
+        json.loads(row.get('prodict_param', {})).keys()
+        for row in read_csv('data/items.csv')
+    )
+    return set(chain(*items))
