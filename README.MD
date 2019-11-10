@@ -37,3 +37,7 @@
 - Создание колонки category_name
 
 Данные берутся из файла `data/items.csv` и сохраняются в файл `data/items_ext.csv` 
+
+
+### Докачка пропущенных картинок
+```python download_img.py```

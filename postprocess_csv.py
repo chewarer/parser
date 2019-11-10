@@ -5,8 +5,8 @@ from parser_lib import read_csv, save_csv, flat_params, map_params, flat_prod_pa
 def main():
     """Rebuild CSV with additional information"""
 
-    fname_new = 'data/items_ext.csv' \
-                ''
+    fname_new = 'data/items_ext.csv'
+
     rows = read_csv('data/items.csv')
     mapper = map_params()
     all_keys = list(rows[0].keys())
