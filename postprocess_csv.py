@@ -1,16 +1,5 @@
 import json
-from itertools import chain
-
 from parser_lib import read_csv, save_csv, flat_params, map_params, flat_prod_params
-
-
-def get_subkeys_by(key: str, file: str):
-    # file = 'data/items.csv'
-    data = read_csv(file)
-    all_keys = (json.loads(x.get(key)).keys() for x in data)
-    all_keys = set(chain(*all_keys))
-
-    return all_keys
 
 
 def main():

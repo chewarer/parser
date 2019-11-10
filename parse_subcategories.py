@@ -2,7 +2,6 @@
     Parse subcategory pages.
     Get title, url, breadcrumbs, filtered parameters.
 """
-# from parser_lib import HOST
 from all_categories import get_all_menu_links
 
 
