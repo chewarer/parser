@@ -38,9 +38,10 @@ async def get_data_from(url):
 
             # Get image
             img_url = parsed_data.get('img_url')[1:]
-            img = await get_response(img_url)
-            if img:
-                write_file(img_url, data, mode='wb')
+            if img_url:
+                img = await get_response(img_url)
+                if img:
+                    write_file(img_url, img, mode='wb')
 
     except Exception as e:
         print(f'Except on parse data: {e}. URL: {url}')
