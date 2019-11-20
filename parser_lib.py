@@ -139,18 +139,15 @@ def parse_item(url, html=None) -> dict:
                                      ).strip().replace('\n', '')
     item['url_orig'] = url
 
-    breadcrumb_top = html.select('.top_row ul.breadcrumb li a')
+    breadcrumb_top = (html.select('.top_row ul.breadcrumb li a')[1:]
+                      or html.select('ul.breadcrumb li a')[1:])
     item['breadcrumb_top'] = '|'.join((u.text for u in breadcrumb_top))
 
-    breadcrumb_bottom = html.select('.bottom_row ul.breadcrumb li a')
+    breadcrumb_bottom = html.select('.bottom_row ul.breadcrumb li a')[1:]
     item['breadcrumb_bottom'] = '|'.join((u.text for u in breadcrumb_bottom))
 
-    item['breadcrumb'] = None
-    if not all((breadcrumb_top, breadcrumb_bottom)):
-        breadcrumb = html.select('ul.breadcrumb li a')[1:]
-        item['breadcrumb'] = '|'.join((u.text for u in breadcrumb))
-
-    item['breadcrumb_urls'] = ','.join([u.attrs.get('href') for u in breadcrumb_bottom])
+    item['breadcrumb_top_urls'] = ','.join([u.attrs.get('href') for u in breadcrumb_top])
+    item['breadcrumb_bottom_urls'] = ','.join([u.attrs.get('href') for u in breadcrumb_bottom])
 
     price = html.select_one('.catalog-item-price .pi_value span')
     item['price'] = (price.text if price else '').strip().replace(' ', '')
@@ -190,8 +187,8 @@ def save_csv(items, file_name, update=True):
 
     if update and os.path.exists(file_name):
         with open(file_name, 'r') as csvfile, tempfile:
-            reader = csv.DictReader(csvfile, fieldnames)
-            writer = csv.DictWriter(tempfile, fieldnames)
+            reader = csv.DictReader(csvfile, fieldnames, delimiter=';')
+            writer = csv.DictWriter(tempfile, fieldnames, delimiter=';')
             # Rewrite existing rows
             for row in reader:
                 writer.writerow(row)
@@ -203,16 +200,16 @@ def save_csv(items, file_name, update=True):
 
     else:
         with open(file_name, 'w') as f:
-            writer = csv.DictWriter(f, fieldnames)
+            writer = csv.DictWriter(f, fieldnames, delimiter=';')
             writer.writeheader()
             for row in items:
                 writer.writerow(row)
 
 
-def read_csv(filename) -> tuple:
+def read_csv(filename: str, fieldnames: tuple = None, delimiter: str = ';') -> tuple:
     """Read csv as dict"""
     with open(filename, 'r') as f:
-        reader = csv.DictReader(f)
+        reader = csv.DictReader(f, fieldnames, delimiter=delimiter)
         data = tuple(row for row in reader)
 
     return data
@@ -235,7 +232,7 @@ def filter_urls(urls, csv_path):
         return urls
 
     with open(csv_path, 'r') as f:
-        c = csv.DictReader(f)
+        c = csv.DictReader(f, delimiter=';')
         csv_urls = set(i.get('url_orig') for i in c)
 
     return urls - csv_urls
@@ -284,7 +281,7 @@ def flat_params() -> set:
 
 def flat_prod_params() -> set:
     """
-        Get flat list of product params i.e. (brand, artikul, category).
+        Get flat list of product params i.e. (brand, sku, category).
     """
     items = (
         json.loads(row.get('prodict_param', {})).keys()
