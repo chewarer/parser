@@ -20,6 +20,7 @@ async def get_response(url):
             print(f'{resp.status}: {url}')
             if str(resp.status).startswith('50'):
                 error_on_urls.add(url)
+                return
             elif resp.status not in (200, 301, 304):
                 error_log(url, 'data/error_item.log')
                 return

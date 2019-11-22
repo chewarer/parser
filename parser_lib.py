@@ -143,7 +143,7 @@ def parse_item(url, html=None) -> dict:
                       or html.select('ul.breadcrumb li a')[1:])
     item['breadcrumb_top'] = '|'.join((u.text for u in breadcrumb_top))
 
-    breadcrumb_bottom = html.select('.bottom_row ul.breadcrumb li a')[1:]
+    breadcrumb_bottom = html.select('.bottom_row ul.breadcrumb li a')
     item['breadcrumb_bottom'] = '|'.join((u.text for u in breadcrumb_bottom))
 
     item['breadcrumb_top_urls'] = ','.join([u.attrs.get('href') for u in breadcrumb_top])
