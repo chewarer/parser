@@ -1,6 +1,8 @@
 import os
 from itertools import chain
 
+from parse_brands import get_all_menu_links_by_brands
+
 
 def get_all_menu_links(url: str) -> set:
     """
@@ -42,6 +44,11 @@ def get_all_items_urls() -> set:
     for url in urls:
         print(url)
         chunks.append(all_subcategory_items(url))
+
+    urls_brands = get_all_menu_links_by_brands(HOST)
+    for url in urls_brands:
+        print(url)
+        chunks.append(all_subcategory_items(url, '_brands'))
 
     # Write items urls to file
     urls = tuple(chain(*chunks))
