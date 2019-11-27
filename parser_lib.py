@@ -3,11 +3,9 @@ from copy import copy
 
 import requests
 import json
-import shutil
 import csv
 import ast
 from itertools import chain
-from tempfile import NamedTemporaryFile
 from requests import ReadTimeout
 from urllib.parse import urlparse, urlunparse
 from urllib.error import HTTPError
@@ -24,20 +22,20 @@ HOST = urlunparse((SCHEME, HOSTNAME, '', '', '', ''))
 HEADERS = {'User-Agent': generate_user_agent(device_type="desktop", os=('mac', 'linux'))}
 
 
-def all_subcategory_items(url):
+def all_subcategory_items(url, postfix='') -> list:
     """
         Get items urls by subcategory url
     """
     html = get_url_data(url)
     if not html:
-        return
+        return []
     html = read_html(html)
 
     # Parse subcategory pages.
     # Get title, url, breadcrumbs, filtered parameters.
     row = parse_html(html, url)
     if row:
-        save_csv([row], 'data/categories.csv', update=True)
+        save_csv([row], f'data/categories{postfix}.csv', update=True)
 
     page_items = (
             html.select('.catalog-item .catalog-item_title a')
@@ -49,8 +47,7 @@ def all_subcategory_items(url):
 
     if pager:
         for page in range(int(pager[0].text), int(pager[-1].text) + 1):
-            html = get_url_data(url, params={'page': page})
-            html = read_html(html)
+            html = read_html(get_url_data(url, params={'page': page}))
             if html:
                 items = (
                         html.select('.catalog-item .catalog-item_title a')
@@ -65,7 +62,7 @@ def all_subcategory_items(url):
     fname = fname[1:] if fname.startswith('/') else fname
     fname = fname.replace('/', '---')
 
-    path = 'data/parsed_categories/'
+    path = f'data/parsed_categories{postfix}/'
     if not os.path.exists(path):
         os.mkdir(path)
     fname = path + fname
@@ -104,6 +101,7 @@ def read_html(html):
 
 def write_file(filename, rows, mode='a'):
     """Save data to file"""
+    filename = filename[:255]
     dirname, fname = os.path.split(filename)
     if not os.path.exists(dirname):
         os.makedirs(dirname)
@@ -182,28 +180,17 @@ def parse_item(url, html=None) -> dict:
 
 def save_csv(items, file_name, update=True):
     """Save items to csv"""
-    tempfile = NamedTemporaryFile(mode='w', delete=False)
     fieldnames = items[0].keys()
 
-    if update and os.path.exists(file_name):
-        with open(file_name, 'r') as csvfile, tempfile:
-            reader = csv.DictReader(csvfile, fieldnames, delimiter=';')
-            writer = csv.DictWriter(tempfile, fieldnames, delimiter=';')
-            # Rewrite existing rows
-            for row in reader:
-                writer.writerow(row)
+    mode = 'a' if update else 'w'
+    has_header = os.path.exists(file_name) and update
 
-            # Write new rows
-            for row in items:
-                writer.writerow(row)
-            shutil.move(tempfile.name, file_name)
-
-    else:
-        with open(file_name, 'w') as f:
-            writer = csv.DictWriter(f, fieldnames, delimiter=';')
+    with open(file_name, mode) as f:
+        writer = csv.DictWriter(f, fieldnames, delimiter=';')
+        if not has_header:
             writer.writeheader()
-            for row in items:
-                writer.writerow(row)
+        for row in items:
+            writer.writerow(row)
 
 
 def read_csv(filename: str, fieldnames: tuple = None, delimiter: str = ';') -> tuple:
@@ -249,7 +236,7 @@ def delete_attr(html: Tag, attr_name):
     return html
 
 
-def map_params() -> dict:
+def map_params(postfix='') -> dict:
     """
         Create map for categories key parameters.
         Like:
@@ -259,7 +246,7 @@ def map_params() -> dict:
                 }
             }
     """
-    categories_list = read_csv('data/categories.csv')
+    categories_list = read_csv(f'data/categories{postfix}.csv')
 
     return {
         row.get('url'): {row.get('title'): ast.literal_eval(row.get('params'))}
@@ -267,9 +254,9 @@ def map_params() -> dict:
     }
 
 
-def flat_params() -> set:
+def flat_params(postfix='') -> set:
     """Get flat list of categories key parameters"""
-    categories_list = read_csv('data/categories.csv')
+    categories_list = read_csv(f'data/categories{postfix}.csv')
 
     params = set(chain(*(
         tuple(ast.literal_eval(row.get('params'))) for row in categories_list
