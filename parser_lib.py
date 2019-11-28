@@ -189,8 +189,7 @@ def save_csv(items, file_name, update=True):
         writer = csv.DictWriter(f, fieldnames, delimiter=';')
         if not has_header:
             writer.writeheader()
-        for row in items:
-            writer.writerow(row)
+        writer.writerows(items)
 
 
 def read_csv(filename: str, fieldnames: tuple = None, delimiter: str = ';') -> tuple:
