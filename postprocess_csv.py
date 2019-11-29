@@ -4,7 +4,8 @@ import os
 import shutil
 import sys
 
-from parser_lib import read_csv, save_csv, flat_params, map_params, flat_prod_params
+from parser_lib import read_csv, save_csv, map_params, flat_prod_params
+from product_params_map import key_params
 
 
 def category_id(by_key='original-link') -> dict:
@@ -27,7 +28,7 @@ def split_to_files(rows):
         ids = {row.get('id'): [] for row in reader if row['id'] != 'id'}
         ids[None] = []
 
-    params = flat_params() | flat_params('_brands')
+    params = set(key_params.values())
 
     for row in rows:
         cat_1_id = row.get('cat_1_id')
@@ -65,7 +66,7 @@ def main(split=False):
         'cat_1_id',
         'cat_2_id',
         'keys',
-        *(flat_params() | flat_params('_brands'))
+        *key_params.values(),
     ))
 
     category_ids_by_url = category_id(by_key='original-link')
@@ -107,14 +108,14 @@ def main(split=False):
             if not keys and len(parent1_url) > 1:
                 keys = mapper.get(parent1_url[-2], {}).values()
 
-        keys = set(*keys) if keys else set()
+        keys = set(*keys)
         if split:
-            row['keys'] = keys
+            row['keys'] = set(key_params.get(k, k) for k in keys)
         params = json.loads(row.get('tech_params', '')) or {}
 
         # Set tech parameters to column
         for k in keys:
-            row[k] = params.get(k)
+            row[key_params.get(k, k)] = params.get(k)
 
         #  Set prodict parameters to columns
         for k, v in json.loads(row.get('prodict_param', {})).items():
