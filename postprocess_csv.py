@@ -35,9 +35,9 @@ def split_to_files(rows):
         # delete extra parameters
         keys = params - row['keys']
         if cat_1_id:
+            row.pop('keys', None)
             for k in keys:
                 row.pop(k, None)
-                row.pop('keys', None)
         ids[cat_1_id].append(row)
 
     dirname = 'data/items_ext'
@@ -98,17 +98,18 @@ def main(split=False):
             row['cat_2_id'] = category_ids_by_name.get(parent2_name[-1], {}).get('id')
 
         # Set key params to columns specified for parent category from bottom breadrumbs
-        keys = mapper.get(parent2_url[-1], {}).values()
-        if not keys and len(parent2_url) > 1:
-            keys = mapper.get(parent2_url[-2], {}).values()
+        keys = mapper.get(parent1_url[-1], {}).values()
+        if not keys and len(parent1_url) > 1:
+            keys = mapper.get(parent1_url[-2], {}).values()
 
         # Set key params to columns specified for parent category from top breadrumbs
         if not keys:
-            keys = mapper.get(parent1_url[-1], {}).values()
-            if not keys and len(parent1_url) > 1:
-                keys = mapper.get(parent1_url[-2], {}).values()
+            keys = mapper.get(parent2_url[-1], {}).values()
+            if not keys and len(parent2_url) > 1:
+                keys = mapper.get(parent2_url[-2], {}).values()
 
         keys = set(*keys)
+        keys.discard('Цена')
         if split:
             row['keys'] = set(key_params.get(k, k) for k in keys)
         params = json.loads(row.get('tech_params', '')) or {}

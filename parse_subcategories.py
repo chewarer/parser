@@ -11,8 +11,7 @@ def parse_html(html, url: str) -> dict:
 
     item = dict()
 
-    params = html.select_one('.catalog-item_tech')
-    params = params.select('.tech_params_name') if params else []
+    params = html.select('.filter .card .card-header a') or []
 
     title = html.select_one('h1')
     item['title'] = (title.text or '').strip() if title else None
